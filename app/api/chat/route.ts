@@ -1,6 +1,7 @@
 import { streamText } from 'ai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { z } from 'zod'
+import { FREE_MODELS, DEFAULT_MODEL } from '@/lib/constants'
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30
@@ -12,7 +13,8 @@ const chatRequestSchema = z.object({
   messages: z.array(z.object({
     role: z.enum(['user', 'assistant', 'system']),
     content: z.string()
-  }))
+  })),
+  model: z.string().optional(),
 })
 
 export async function POST(request: Request) {
@@ -28,7 +30,7 @@ export async function POST(request: Request) {
 
     // Parse and validate request
     const body = await request.json()
-    const { messages } = chatRequestSchema.parse(body)
+    const { messages, model } = chatRequestSchema.parse(body)
 
     if (!messages || messages.length === 0) {
       return Response.json(
@@ -37,23 +39,42 @@ export async function POST(request: Request) {
       )
     }
 
+    // Validate and select model
+    let selectedModel: string = DEFAULT_MODEL;
+    if (model) {
+      // Check if the model is in our allowed free models list
+      const allowedModel = FREE_MODELS.find((m) => m.id === model);
+      if (!allowedModel) {
+        return Response.json(
+          {
+            error:
+              'Invalid model selected. Only free OpenRouter models are allowed.',
+          },
+          { status: 400 }
+        );
+      }
+      selectedModel = model;
+    }
+
     // Create OpenRouter client
     const openrouter = createOpenRouter({
       apiKey,
       headers: {
-        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+        'HTTP-Referer':
+          process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
         'X-Title': 'Opal AI Chat Template',
       },
-    })
+    });
 
     // Stream the response
     const result = await streamText({
-      model: openrouter('z-ai/glm-4.5-air:free'),
+      model: openrouter(selectedModel),
       messages,
-      system: 'You are a helpful AI assistant built with the Opal AI template. You provide clear, concise, and accurate responses.',
+      system:
+        'You are a helpful AI assistant built with the Opal AI template. You provide clear, concise, and accurate responses.',
       maxTokens: 2048,
       temperature: 0.7,
-    })
+    });
 
     // Return the streaming response
     return result.toDataStreamResponse()
@@ -64,9 +85,12 @@ export async function POST(request: Request) {
     // Handle validation errors
     if (error instanceof z.ZodError) {
       return Response.json(
-        { error: 'Invalid request format', details: (error as z.ZodError).errors },
+        {
+          error: 'Invalid request format',
+          details: (error as z.ZodError).errors,
+        },
         { status: 400 }
-      )
+      );
     }
 
     // Handle OpenRouter API errors
@@ -84,7 +108,7 @@ export async function POST(request: Request) {
         return Response.json(
           { error: 'Authentication failed. Please check your API key.' },
           { status: 401 }
-        )
+        );
       }
     }
 
@@ -92,7 +116,7 @@ export async function POST(request: Request) {
     return Response.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }
-    )
+    );
   }
 }
 

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useState } from "react"
 import { RippleButton } from "@/components/ui/ripple-button"
 import { cn } from "@/lib/utils"
 
@@ -59,6 +60,15 @@ const ThemeToggleButton = React.forwardRef<
       showLabel = false,
       url,
       disabled,
+      onAnimationStart,
+      onDragStart,
+      onDrag,
+      onDragEnd,
+      onDragEnter,
+      onDragExit,
+      onDragLeave,
+      onDragOver,
+      onDrop,
       ...props
     },
     ref
@@ -72,7 +82,9 @@ const ThemeToggleButton = React.forwardRef<
     }
 
     const Icon = () => {
-      if (theme === "dark") {
+      const [isDarkTheme, setIsDarkTheme] = useState(theme === "dark");
+      console.log("Icon rendered with theme:", theme);
+      if (isDarkTheme) {
         return (
           <svg
             xmlns="http://www.w3.org/2000/svg"

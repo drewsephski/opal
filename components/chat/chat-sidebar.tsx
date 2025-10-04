@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { RippleButton } from "@/components/ui/ripple-button"
 import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import {
   MessageSquare,
   Settings,
@@ -13,18 +14,32 @@ import {
   X,
   Plus,
   Clock,
-  Zap
+  Zap,
+  Copy,
+  BarChart3
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import type { AIModel, ComparisonMode } from "@/lib/types"
 
 interface ChatSidebarProps {
   isOpen: boolean
   onToggle: () => void
   onClearChat: () => void
   messageCount: number
+  selectedModels: AIModel[]
+  comparisonMode: ComparisonMode
+  onModelChange: (models: AIModel[]) => void
 }
 
-export function ChatSidebar({ isOpen, onToggle, onClearChat, messageCount }: ChatSidebarProps) {
+export function ChatSidebar({
+  isOpen,
+  onToggle,
+  onClearChat,
+  messageCount,
+  selectedModels,
+  comparisonMode,
+  onModelChange
+}: ChatSidebarProps) {
   const [sidebarState, setSidebarState] = useState(isOpen)
 
   useEffect(() => {
@@ -66,7 +81,7 @@ export function ChatSidebar({ isOpen, onToggle, onClearChat, messageCount }: Cha
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="text-lg font-semibold">Chat Options</h2>
+            <h2 className="text-lg font-semibold">Chat Settings</h2>
             <RippleButton
               variant="ghost"
               size="sm"
@@ -111,10 +126,46 @@ export function ChatSidebar({ isOpen, onToggle, onClearChat, messageCount }: Cha
                 Model Settings
               </h3>
               <div className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium">Current Model</p>
-                  <p className="text-xs text-muted-foreground">GLM-4.5-Air (Free)</p>
-                </div>
+                {comparisonMode === 'single' ? (
+                  <div>
+                    <p className="text-sm font-medium">Current Model</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="secondary" size="sm">
+                        {selectedModels[0]?.name}
+                      </Badge>
+                      <Badge variant="outline" size="sm">
+                        {selectedModels[0]?.speed}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {selectedModels[0]?.contextWindow}K context • {selectedModels[0]?.provider}
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm font-medium">Active Models ({selectedModels.length})</p>
+                    <div className="space-y-2 mt-2">
+                      {selectedModels.map((model, index) => (
+                        <div key={model.id} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" size="sm">
+                              {model.name}
+                            </Badge>
+                            <Badge
+                              variant={model.speed === 'fast' ? 'success' : model.speed === 'balanced' ? 'secondary' : 'outline'}
+                              size="sm"
+                            >
+                              {model.speed}
+                            </Badge>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {model.provider}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div>
                   <p className="text-sm font-medium">Rate Limits</p>
                   <p className="text-xs text-muted-foreground">20 req/min, 50 req/day</p>
@@ -128,30 +179,97 @@ export function ChatSidebar({ isOpen, onToggle, onClearChat, messageCount }: Cha
               </div>
             </Card>
 
+            {/* Comparison Settings - only show in comparison mode */}
+            {comparisonMode !== 'single' && (
+              <Card className="p-4">
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  Comparison Settings
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">Mode</p>
+                    <p className="text-xs text-muted-foreground capitalize">{comparisonMode} View</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Total Messages</p>
+                    <p className="text-xs text-muted-foreground">{messageCount} messages across all models</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <RippleButton
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => alert('Export comparison coming soon!')}
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Export
+                    </RippleButton>
+                    <RippleButton
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => alert('Copy comparison coming soon!')}
+                    >
+                      <Copy className="w-3 h-3 mr-1" />
+                      Copy
+                    </RippleButton>
+                  </div>
+                </div>
+              </Card>
+            )}
+
             {/* Quick Actions */}
             <Card className="p-4">
               <h3 className="text-sm font-semibold mb-3">Quick Actions</h3>
               <div className="space-y-2">
-                <RippleButton
-                  onClick={handleExportChat}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-2"
-                  disabled={messageCount === 0}
-                >
-                  <Download className="w-4 h-4" />
-                  Export Chat
-                </RippleButton>
-                <RippleButton
-                  onClick={handleShareChat}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-2"
-                  disabled={messageCount === 0}
-                >
-                  <Share className="w-4 h-4" />
-                  Share Chat
-                </RippleButton>
+                {comparisonMode === 'single' ? (
+                  <>
+                    <RippleButton
+                      onClick={handleExportChat}
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start gap-2"
+                      disabled={messageCount === 0}
+                    >
+                      <Download className="w-4 h-4" />
+                      Export Chat
+                    </RippleButton>
+                    <RippleButton
+                      onClick={handleShareChat}
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start gap-2"
+                      disabled={messageCount === 0}
+                    >
+                      <Share className="w-4 h-4" />
+                      Share Chat
+                    </RippleButton>
+                  </>
+                ) : (
+                  <>
+                    <RippleButton
+                      onClick={() => alert('Export comparison coming soon!')}
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start gap-2"
+                      disabled={messageCount === 0}
+                    >
+                      <Download className="w-4 h-4" />
+                      Export Comparison
+                    </RippleButton>
+                    <RippleButton
+                      onClick={() => alert('Copy comparison coming soon!')}
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start gap-2"
+                      disabled={messageCount === 0}
+                    >
+                      <Copy className="w-4 h-4" />
+                      Copy Comparison
+                    </RippleButton>
+                  </>
+                )}
                 <RippleButton
                   onClick={onClearChat}
                   variant="ghost"
@@ -160,7 +278,7 @@ export function ChatSidebar({ isOpen, onToggle, onClearChat, messageCount }: Cha
                   disabled={messageCount === 0}
                 >
                   <Trash2 className="w-4 h-4" />
-                  Clear Chat
+                  {comparisonMode === 'single' ? 'Clear Chat' : 'Clear All Chats'}
                 </RippleButton>
               </div>
             </Card>

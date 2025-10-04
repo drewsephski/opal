@@ -14,6 +14,25 @@ export interface ChatSession {
   updatedAt: Date
 }
 
+// AI Model types
+export interface AIModel {
+  id: string;
+  name: string;
+  description: string;
+  contextWindow: number;
+  speed: 'fast' | 'balanced' | 'slow';
+  provider: string;
+}
+
+export interface ComparisonPane {
+  id: string;
+  model: AIModel;
+  messages: Message[];
+  isLoading: boolean;
+}
+
+export type ComparisonMode = 'single' | 'split' | 'triple';
+
 // Navigation types
 export interface NavLink {
   name: string
@@ -54,7 +73,8 @@ export interface AgentWorkflow {
 
 // API types
 export interface ChatRequest {
-  messages: Message[]
+  messages: Message[];
+  model?: string;
 }
 
 export interface ChatResponse {
@@ -84,15 +104,18 @@ export interface NavigationProps {
 }
 
 export interface ChatSidebarProps {
-  isOpen: boolean
-  onToggle: () => void
-  onClearChat: () => void
-  messageCount: number
+  isOpen: boolean;
+  onToggle: () => void;
+  onClearChat: () => void;
+  messageCount: number;
+  selectedModels: AIModel[];
+  comparisonMode: ComparisonMode;
+  onModelChange: (models: AIModel[]) => void;
 }
 
 export interface MessageBubbleProps {
-  role: "user" | "assistant"
-  content: string
-  timestamp: Date
-  isStreaming?: boolean
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+  isStreaming?: boolean;
 }

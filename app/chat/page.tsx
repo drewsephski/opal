@@ -5,12 +5,18 @@ import { ChatInterface } from "@/components/chat/chat-interface"
 import { ChatSidebar } from "@/components/chat/chat-sidebar"
 import { RippleButton } from "@/components/ui/ripple-button"
 import { Menu } from "lucide-react"
+import { FREE_MODELS, DEFAULT_MODEL } from "@/lib/constants"
+import type { AIModel, ComparisonMode } from "@/lib/types"
 
 export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [messageCount, setMessageCount] = useState(0)
   const [sidebarWidth, setSidebarWidth] = useState(320) // Default width in pixels
   const [isResizing, setIsResizing] = useState(false)
+  const [selectedModels, setSelectedModels] = useState<AIModel[]>([
+    FREE_MODELS.find(m => m.id === DEFAULT_MODEL) || FREE_MODELS[0]
+  ])
+  const [comparisonMode, setComparisonMode] = useState<ComparisonMode>('single')
   const resizeRef = useRef<HTMLDivElement>(null)
 
   const handleClearChat = () => {
@@ -20,6 +26,10 @@ export default function ChatPage() {
 
   const handleMessageCountChange = (count: number) => {
     setMessageCount(count)
+  }
+
+  const handleModelChange = (models: AIModel[]) => {
+    setSelectedModels(models)
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -106,6 +116,9 @@ export default function ChatPage() {
             onToggle={() => setSidebarOpen(!sidebarOpen)}
             onClearChat={handleClearChat}
             messageCount={messageCount}
+            selectedModels={selectedModels}
+            comparisonMode={comparisonMode}
+            onModelChange={handleModelChange}
           />
         </div>
       </div>
