@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Button } from "@/components/ui/button"
+import { RippleButton } from "@/components/ui/ripple-button"
 import { cn } from "@/lib/utils"
 
 type Theme = "light" | "dark"
@@ -117,7 +117,7 @@ const ThemeToggleButton = React.forwardRef<
     }
 
     return (
-      <Button
+      <RippleButton
         ref={ref}
         variant="outline"
         size="icon"
@@ -128,7 +128,7 @@ const ThemeToggleButton = React.forwardRef<
       >
         <Icon />
         {showLabel && <span>{theme === "dark" ? "Dark" : "Light"}</span>}
-      </Button>
+      </RippleButton>
     )
   }
 )
