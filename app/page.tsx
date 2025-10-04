@@ -1,4 +1,4 @@
-c"use client";
+"use client";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { RippleButton } from "@/components/ui/ripple-button";
